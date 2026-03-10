@@ -1,0 +1,20 @@
+backbone:
+  model_name: vit_huge         # vit_tiny | vit_small | vit_base | vit_large | vit_huge | vit_giant
+  checkpoint_path: null         # path to I-JEPA pretrained checkpoint (.pth)
+  img_size: 224
+  patch_size: 14
+  freeze: true
+
+training:
+  epochs: 50
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.05
+  scheduler: cosine             # cosine | step
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
+  log_interval: 50              # print every N batches
+  save_dir: ./checkpoints
+
+seed: 42

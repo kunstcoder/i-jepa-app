@@ -1,0 +1,29 @@
+backbone:
+  model_name: vit_huge
+  checkpoint_path: null
+  img_size: 224
+  patch_size: 14
+  freeze: true
+
+task:
+  type: classification
+  num_classes: 1000
+  head_mode: linear             # linear | attentive
+
+data:
+  train_dir: /path/to/train
+  val_dir: /path/to/val
+
+training:
+  epochs: 50
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.05
+  scheduler: cosine
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
+  log_interval: 50
+  save_dir: ./checkpoints/classification
+
+seed: 42

@@ -1,0 +1,32 @@
+backbone:
+  model_name: vit_huge
+  checkpoint_path: null
+  img_size: 224
+  patch_size: 14
+  freeze: true
+
+task:
+  type: segmentation
+  num_classes: 21               # e.g. VOC=21, ADE20K=150, cityscapes=19
+  decoder_type: progressive     # linear | progressive
+  ignore_index: 255
+
+data:
+  train_images_dir: /path/to/train/images
+  train_masks_dir: /path/to/train/masks
+  val_images_dir: /path/to/val/images
+  val_masks_dir: /path/to/val/masks
+
+training:
+  epochs: 80
+  batch_size: 16
+  lr: 0.0005
+  weight_decay: 0.05
+  scheduler: cosine
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
+  log_interval: 50
+  save_dir: ./checkpoints/segmentation
+
+seed: 42
