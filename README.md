@@ -451,3 +451,49 @@ from src.models.vision_transformer import VIT_REGISTRY
 print(list(VIT_REGISTRY.keys()))
 # ['vit_tiny', 'vit_small', 'vit_base', 'vit_large', 'vit_huge', 'vit_giant']
 ```
+
+---
+
+## 4. Sketch Reconstruction (Masked Inpainting)
+
+사전학습된 I-JEPA encoder를 고정(freeze)한 뒤, 마스크 영역의 **스케치 타깃**을 복원하는 디코더를 학습할 수 있습니다.
+
+### 데이터 준비
+
+아래처럼 이미지 폴더만 있으면 됩니다(타깃 스케치는 학습 시 edge 기반으로 생성).
+
+```
+/path/to/dataset/
+├── train/
+│   └── images/
+│       ├── img_001.jpg
+│       └── ...
+└── val/
+    └── images/
+        ├── img_101.jpg
+        └── ...
+```
+
+### config 수정
+
+`configs/reconstruction.yaml`:
+
+```yaml
+task:
+  type: sketch_reconstruction
+  min_mask_ratio: 0.10
+  max_mask_ratio: 0.40
+
+loss:
+  masked: 5.0
+  global: 1.0
+  edge: 1.0
+```
+
+### 학습 실행
+
+```bash
+python train_reconstruction.py --config configs/reconstruction.yaml
+```
+
+산출되는 검증 지표는 `val_masked_psnr`이며, 최고 성능 체크포인트가 `training.save_dir/best.pth`에 저장됩니다.
