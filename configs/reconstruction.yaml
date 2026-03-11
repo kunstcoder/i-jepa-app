@@ -1,0 +1,36 @@
+backbone:
+  model_name: vit_huge
+  checkpoint_path: null
+  img_size: 224
+  patch_size: 14
+  freeze: true
+
+task:
+  type: sketch_reconstruction
+  mask_fill: 0.0
+  min_mask_ratio: 0.10
+  max_mask_ratio: 0.40
+  sketch_blur_radius: 0.5
+
+data:
+  train_images_dir: /path/to/train/images
+  val_images_dir: /path/to/val/images
+
+loss:
+  masked: 5.0
+  global: 1.0
+  edge: 1.0
+
+training:
+  epochs: 80
+  batch_size: 16
+  lr: 0.0005
+  weight_decay: 0.05
+  scheduler: cosine
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
+  log_interval: 50
+  save_dir: ./checkpoints/reconstruction
+
+seed: 42
