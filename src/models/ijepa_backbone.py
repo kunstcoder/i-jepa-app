@@ -43,6 +43,15 @@ class IJEPABackbone(nn.Module):
         if freeze:
             self.freeze()
 
+    def _is_frozen(self) -> bool:
+        return not any(p.requires_grad for p in self.encoder.parameters())
+
+    def _encode(self, x: torch.Tensor) -> torch.Tensor:
+        if self._is_frozen():
+            with torch.no_grad():
+                return self.encoder(x)
+        return self.encoder(x)
+
     def freeze(self):
         for param in self.encoder.parameters():
             param.requires_grad = False
@@ -52,15 +61,13 @@ class IJEPABackbone(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = True
 
-    @torch.no_grad()
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Extract patch-level features. Returns [B, N, D]."""
-        return self.encoder(x)
+        return self._encode(x)
 
-    @torch.no_grad()
     def get_spatial_features(self, x: torch.Tensor) -> torch.Tensor:
         """Extract spatial feature map. Returns [B, D, H, W]."""
-        features = self.encoder(x)
+        features = self._encode(x)
         B, N, D = features.shape
         H = W = self.num_patches_per_side
         return features.transpose(1, 2).reshape(B, D, H, W)
@@ -68,6 +75,6 @@ class IJEPABackbone(nn.Module):
     def train(self, mode=True):
         # Keep encoder in eval mode if frozen
         super().train(mode)
-        if not any(p.requires_grad for p in self.encoder.parameters()):
+        if self._is_frozen():
             self.encoder.eval()
         return self
