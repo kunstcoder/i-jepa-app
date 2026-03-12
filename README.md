@@ -159,7 +159,7 @@ backbone:
 task:
   type: classification
   num_classes: 1000           # 데이터셋 클래스 수
-  head_mode: linear           # linear 또는 attentive
+  head_mode: linear           # linear | attentive | multi_layer_mlp | global_local_fusion
 
 data:
   train_dir: /path/to/train

@@ -106,6 +106,9 @@ def main():
         backbone=backbone,
         num_classes=cfg["task"]["num_classes"],
         head_mode=cfg["task"]["head_mode"],
+        pool_last_n=cfg["task"].get("pool_last_n", 4),
+        head_hidden_dim=cfg["task"].get("head_hidden_dim"),
+        local_ratio=cfg["task"].get("local_ratio", 0.5),
     ).to(device)
 
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
