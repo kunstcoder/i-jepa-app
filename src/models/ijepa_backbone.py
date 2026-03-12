@@ -6,12 +6,7 @@ from src.utils.checkpoint import load_ijepa_encoder
 
 
 class IJEPABackbone(nn.Module):
-    """Wrapper around I-JEPA's ViT encoder for downstream feature extraction.
-
-    Loads pretrained encoder weights and provides two output modes:
-    - forward():              [B, N, D] patch-level features
-    - get_spatial_features(): [B, D, H, W] spatial feature map
-    """
+    """Wrapper around I-JEPA's ViT encoder for downstream feature extraction."""
 
     def __init__(
         self,
@@ -43,6 +38,9 @@ class IJEPABackbone(nn.Module):
         if freeze:
             self.freeze()
 
+    def _is_frozen(self) -> bool:
+        return not any(p.requires_grad for p in self.encoder.parameters())
+
     def freeze(self):
         for param in self.encoder.parameters():
             param.requires_grad = False
@@ -52,15 +50,46 @@ class IJEPABackbone(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = True
 
-    @torch.no_grad()
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Extract patch-level features. Returns [B, N, D]."""
-        return self.encoder(x)
+    def _forward_impl(self, x: torch.Tensor, return_all_layers: bool = False):
+        x = self.encoder.patch_embed(x)
+        pos_embed = self.encoder.interpolate_pos_encoding(x, self.encoder.pos_embed)
+        x = x + pos_embed
 
-    @torch.no_grad()
+        if return_all_layers:
+            layer_tokens = []
+            for blk in self.encoder.blocks:
+                x = blk(x)
+                layer_tokens.append(self.encoder.norm(x))
+            return self.encoder.norm(x), layer_tokens
+
+        for blk in self.encoder.blocks:
+            x = blk(x)
+        return self.encoder.norm(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Extract final-layer patch tokens. Returns [B, N, D]."""
+        if self._is_frozen():
+            with torch.no_grad():
+                return self._forward_impl(x, return_all_layers=False)
+        return self._forward_impl(x, return_all_layers=False)
+
+    def get_last_n_layer_tokens(self, x: torch.Tensor, last_n: int = 4) -> list[torch.Tensor]:
+        """Return patch tokens from the last n transformer layers."""
+        if last_n < 1:
+            raise ValueError(f"last_n must be >=1, got {last_n}")
+
+        if self._is_frozen():
+            with torch.no_grad():
+                _, layer_tokens = self._forward_impl(x, return_all_layers=True)
+        else:
+            _, layer_tokens = self._forward_impl(x, return_all_layers=True)
+
+        last_n = min(last_n, len(layer_tokens))
+        return layer_tokens[-last_n:]
+
     def get_spatial_features(self, x: torch.Tensor) -> torch.Tensor:
-        """Extract spatial feature map. Returns [B, D, H, W]."""
-        features = self.encoder(x)
+        """Extract spatial feature map from final layer. Returns [B, D, H, W]."""
+        features = self.forward(x)
         B, N, D = features.shape
         H = W = self.num_patches_per_side
         return features.transpose(1, 2).reshape(B, D, H, W)
@@ -68,6 +97,6 @@ class IJEPABackbone(nn.Module):
     def train(self, mode=True):
         # Keep encoder in eval mode if frozen
         super().train(mode)
-        if not any(p.requires_grad for p in self.encoder.parameters()):
+        if self._is_frozen():
             self.encoder.eval()
         return self

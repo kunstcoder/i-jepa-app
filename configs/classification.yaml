@@ -7,22 +7,27 @@ backbone:
 
 task:
   type: classification
-  num_classes: 1000
-  head_mode: linear             # linear | attentive
+  num_classes: null             # null이면 train_dir 기준 자동 추론 (Food-101 => 101)
+  head_mode: linear             # linear | attentive | multi_layer_mlp | global_local_fusion
+  pool_last_n: 4                # head_mode=multi_layer_mlp에서 사용
+  head_hidden_dim: null         # null이면 내부 기본값 사용
+  local_ratio: 0.5              # head_mode=global_local_fusion에서 local branch 비율
 
 data:
   train_dir: /path/to/train
   val_dir: /path/to/val
 
 training:
-  epochs: 50
-  batch_size: 64
-  lr: 0.001
-  weight_decay: 0.05
+  epochs: 100
+  batch_size: 128
+  lr: 0.0005
+  weight_decay: 0.01
   scheduler: cosine
   num_workers: 8
   device: cuda
   mixed_precision: true
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
   log_interval: 50
   save_dir: ./checkpoints/classification
 
