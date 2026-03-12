@@ -1,0 +1,45 @@
+# Food-101 frozen-backbone fine-tuning recipe (I-JEPA encoder 고정)
+backbone:
+  model_name: vit_huge
+  checkpoint_path: /path/to/ijepa_vith14.pth
+  img_size: 224
+  patch_size: 14
+  freeze: true
+
+task:
+  type: classification
+  num_classes: 101
+  # Stage A/B/C 중 실험 전환
+  head_mode: global_local_fusion   # linear | attentive | multi_layer_mlp | global_local_fusion
+  pool_last_n: 4                   # multi_layer_mlp에서만 사용
+  head_hidden_dim: 2048            # null이면 자동값 사용
+  local_ratio: 0.5                 # global_local_fusion에서만 사용
+
+data:
+  # Food-101 cleaned split 권장
+  train_dir: /path/to/food101/train
+  val_dir: /path/to/food101/val
+
+training:
+  # frozen backbone에서는 head만 학습하므로 비교적 큰 LR/짧은 epoch가 유효
+  epochs: 60
+  batch_size: 128
+  lr: 0.0015
+  head_lr_mult: 1.0                # backbone이 완전 freeze이므로 실질적으로 head lr = lr
+  weight_decay: 0.05
+  scheduler: cosine
+
+  # backbone freeze 실험에서는 layer decay / unfreeze 비활성화
+  use_layer_decay: false
+  layer_decay: 0.75
+  unfreeze_schedule: []
+
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
+  log_interval: 50
+  save_dir: ./checkpoints/food101_frozen
+
+seed: 42
