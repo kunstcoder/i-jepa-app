@@ -9,7 +9,7 @@ import random
 import numpy as np
 import torch
 import yaml
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from torch.utils.data import DataLoader
 
 from src.models.ijepa_backbone import IJEPABackbone
@@ -205,7 +205,7 @@ def main():
 
     optimizer = build_optimizer(model, cfg)
     scheduler = build_scheduler(optimizer, cfg, total_epochs=cfg["training"]["epochs"])
-    scaler = GradScaler() if cfg["training"].get("mixed_precision", False) else None
+    scaler = GradScaler("cuda") if (cfg["training"].get("mixed_precision", False) and device.type == "cuda") else None
 
     unfreeze_schedule = cfg["training"].get("unfreeze_schedule", [])
     applied_unfreeze_steps: set[int] = set()

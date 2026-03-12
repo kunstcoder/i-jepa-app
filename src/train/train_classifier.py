@@ -3,7 +3,7 @@ import time
 
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast
+from torch.amp import autocast
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def train_one_epoch(model, dataloader, optimizer, scheduler, device, epoch,
         optimizer.zero_grad(set_to_none=True)
 
         if scaler is not None:
-            with autocast():
+            with autocast(device_type=device.type):
                 logits = model(images)
                 loss = criterion(logits, targets)
             scaler.scale(loss).backward()

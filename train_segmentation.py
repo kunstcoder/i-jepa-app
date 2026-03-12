@@ -9,7 +9,7 @@ import random
 import numpy as np
 import torch
 import yaml
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from torch.utils.data import DataLoader
 
 from src.models.ijepa_backbone import IJEPABackbone
@@ -129,7 +129,7 @@ def main():
             optimizer, T_max=cfg["training"]["epochs"],
         )
 
-    scaler = GradScaler() if cfg["training"].get("mixed_precision", False) else None
+    scaler = GradScaler("cuda") if (cfg["training"].get("mixed_precision", False) and device.type == "cuda") else None
 
     # -- training loop
     save_dir = cfg["training"]["save_dir"]
