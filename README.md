@@ -159,7 +159,7 @@ backbone:
 task:
   type: classification
   num_classes: 1000           # 데이터셋 클래스 수
-  head_mode: linear           # linear 또는 attentive
+  head_mode: linear           # linear | attentive | multi_layer_mlp | global_local_fusion
 
 data:
   train_dir: /path/to/train
@@ -451,3 +451,58 @@ from src.models.vision_transformer import VIT_REGISTRY
 print(list(VIT_REGISTRY.keys()))
 # ['vit_tiny', 'vit_small', 'vit_base', 'vit_large', 'vit_huge', 'vit_giant']
 ```
+
+---
+
+## 4. Sketch Reconstruction (Masked Inpainting)
+
+사전학습된 I-JEPA encoder를 고정(freeze)한 뒤, 마스크 영역의 **스케치 타깃**을 복원하는 디코더를 학습할 수 있습니다.
+
+### 데이터 준비
+
+아래처럼 이미지 폴더만 있으면 됩니다(타깃 스케치는 학습 시 edge 기반으로 생성).
+
+```
+/path/to/dataset/
+├── train/
+│   └── images/
+│       ├── img_001.jpg
+│       └── ...
+└── val/
+    └── images/
+        ├── img_101.jpg
+        └── ...
+```
+
+### config 수정
+
+`configs/reconstruction.yaml`:
+
+```yaml
+task:
+  type: sketch_reconstruction
+  min_mask_ratio: 0.10
+  max_mask_ratio: 0.40
+
+loss:
+  masked: 5.0
+  global: 1.0
+  edge: 1.0
+```
+
+### 학습 실행
+
+```bash
+python train_reconstruction.py --config configs/reconstruction.yaml
+```
+
+산출되는 검증 지표는 `val_masked_psnr`이며, 최고 성능 체크포인트가 `training.save_dir/best.pth`에 저장됩니다.
+
+
+### Food-101 학습 팁 (학습이 안 되는 경우)
+
+- `task.num_classes`는 `101`이어야 합니다. 현재 기본 설정은 `null`이며, 실행 시 `train_dir` 클래스 수로 자동 추론됩니다.
+- `backbone.freeze: true`일 때 `checkpoint_path`가 비어 있으면 랜덤 encoder가 고정되어 학습이 거의 진행되지 않습니다. 반드시 I-JEPA pretrained checkpoint를 지정하세요.
+- 권장 시작값: `head_mode: attentive`, `lr: 5e-4`, `weight_decay: 1e-2`, `label_smoothing: 0.1`, `epochs: 100`.
+- 단계적 unfreeze가 필요하면 `training.unfreeze_schedule`을 사용하세요. 예: `[{epoch: 20, unfreeze_last_n: 4}, {epoch: 40, unfreeze_last_n: 8}]`
+- backbone을 fine-tuning할 때는 `training.head_lr_mult`, `training.use_layer_decay`, `training.layer_decay`를 함께 조정하세요.

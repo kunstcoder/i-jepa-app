@@ -1,2 +1,3 @@
 from src.datasets.classification_dataset import ClassificationDataset
 from src.datasets.segmentation_dataset import SegmentationDataset
+from src.datasets.sketch_inpainting_dataset import SketchInpaintingDataset
