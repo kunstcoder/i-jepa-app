@@ -21,8 +21,12 @@ training:
   epochs: 100
   batch_size: 128
   lr: 0.0005
+  head_lr_mult: 5.0             # head learning rate multiplier (vs backbone)
   weight_decay: 0.01
   scheduler: cosine
+  use_layer_decay: false        # true일 때 backbone에 layer-wise lr decay 적용
+  layer_decay: 0.75
+  unfreeze_schedule: []         # 예: [{epoch: 20, unfreeze_last_n: 4}, {epoch: 40, unfreeze_last_n: 8}]
   num_workers: 8
   device: cuda
   mixed_precision: true

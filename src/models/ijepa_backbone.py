@@ -50,6 +50,25 @@ class IJEPABackbone(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = True
 
+    def unfreeze_last_n_blocks(self, n_blocks: int, include_norm: bool = True):
+        """Freeze all encoder params, then unfreeze only the last n transformer blocks."""
+        if n_blocks < 1:
+            raise ValueError(f"n_blocks must be >= 1, got {n_blocks}")
+
+        total_blocks = len(self.encoder.blocks)
+        n_blocks = min(n_blocks, total_blocks)
+
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
+        for blk in self.encoder.blocks[-n_blocks:]:
+            for param in blk.parameters():
+                param.requires_grad = True
+
+        if include_norm:
+            for param in self.encoder.norm.parameters():
+                param.requires_grad = True
+
     def _forward_impl(self, x: torch.Tensor, return_all_layers: bool = False):
         x = self.encoder.patch_embed(x)
         pos_embed = self.encoder.interpolate_pos_encoding(x, self.encoder.pos_embed)
@@ -95,7 +114,7 @@ class IJEPABackbone(nn.Module):
         return features.transpose(1, 2).reshape(B, D, H, W)
 
     def train(self, mode=True):
-        # Keep encoder in eval mode if frozen
+        # Keep encoder in eval mode only if fully frozen
         super().train(mode)
         if self._is_frozen():
             self.encoder.eval()

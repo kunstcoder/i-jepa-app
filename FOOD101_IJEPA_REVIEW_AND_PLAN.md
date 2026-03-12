@@ -45,7 +45,10 @@
   noisy train에서 holdout validation 분리 권장
 - 기본 augmentation은 mild하게 시작
 
+## 이번 변경에서 반영된 항목
+- layer-wise LR decay optimizer 그룹 자동 구성 (`training.use_layer_decay`, `training.layer_decay`)
+- staged unfreeze 스케줄(에폭 기반) 자동화 (`training.unfreeze_schedule`)
+- head/backbone LR 분리 (`training.head_lr_mult`)
+
 ## 이번 변경에서 미반영(추가 예정)
-- layer-wise LR decay optimizer 그룹 자동 구성
-- staged unfreeze 스케줄(에폭 기반) 자동화
 - 224->336 해상도 curriculum 학습 스크립트
