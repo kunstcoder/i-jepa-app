@@ -497,3 +497,10 @@ python train_reconstruction.py --config configs/reconstruction.yaml
 ```
 
 산출되는 검증 지표는 `val_masked_psnr`이며, 최고 성능 체크포인트가 `training.save_dir/best.pth`에 저장됩니다.
+
+
+### Food-101 학습 팁 (학습이 안 되는 경우)
+
+- `task.num_classes`는 `101`이어야 합니다. 현재 기본 설정은 `null`이며, 실행 시 `train_dir` 클래스 수로 자동 추론됩니다.
+- `backbone.freeze: true`일 때 `checkpoint_path`가 비어 있으면 랜덤 encoder가 고정되어 학습이 거의 진행되지 않습니다. 반드시 I-JEPA pretrained checkpoint를 지정하세요.
+- 권장 시작값: `head_mode: attentive`, `lr: 5e-4`, `weight_decay: 1e-2`, `label_smoothing: 0.1`, `epochs: 100`.
